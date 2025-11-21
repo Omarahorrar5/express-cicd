@@ -1,0 +1,21 @@
+stages:
+  - build
+
+variables:
+  IMAGE_NAME: "express-ci"
+
+build-docker-image:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - docker info
+    - apk add --no-cache nodejs npm
+  script:
+    - npm install
+    - docker build -t $IMAGE_NAME:latest .
+    - docker image save $IMAGE_NAME:latest -o docker-image.tar
+  artifacts:
+    paths:
+      - docker-image.tar
