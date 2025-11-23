@@ -9,77 +9,43 @@ variables:
 
 test-app:
   stage: test
-  image: node:18-alpine
-  before_script:
-    - echo "==> Installing dependencies"
-    - npm install
   script:
-    - echo "==> Running tests"
+    - echo "==> Running tests locally"
+    - npm install
     - npm test
   only:
     - main
 
 build-image:
   stage: build
-  image: docker:24.0.5
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--tls=false"]
-
-  before_script:
-    - apk add --no-cache nodejs npm
-    - docker info
-    - npm install
-
   script:
-    - echo "==> Building Docker image"
+    - echo "==> Building Docker image locally"
     - docker build -t $IMAGE_NAME:latest .
-
   only:
     - main
 
 push-image:
   stage: push
-  image: docker:24.0.5
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--tls=false"]
-
-  before_script:
-    - docker info
-
   script:
-    - echo "==> Logging in to Docker Hub"
+    - echo "==> Logging into Docker Hub"
     - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
     - echo "==> Tagging image"
-    - docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:latest .
+    - docker tag $IMAGE_NAME:latest $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
     - echo "==> Pushing image"
     - docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
-
   only:
     - main
-
-deploy-to-vm:
+    
+deploy-to-local:
   stage: deploy
-  image: alpine:latest
-  before_script:
-    - apk add --no-cache openssh-client bash
-    - mkdir -p ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-    - chmod 600 ~/.ssh/id_ed25519
-    - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n" > ~/.ssh/config
   script:
-    - echo "==> Deploying latest image to $DEPLOY_HOST as $DEPLOY_USER"
-    - ssh -i ~/.ssh/id_ed25519 $DEPLOY_USER@$DEPLOY_HOST "
-        set -e
-        echo 'Pulling image $DOCKER_IMAGE' &&
-        docker pull $DOCKER_IMAGE &&
-        echo 'Stopping old container (if exists)' &&
-        docker stop express-ci || true &&
-        echo 'Removing old container (if exists)' &&
-        docker rm express-ci || true &&
-        echo 'Starting new container with :latest' &&
-        docker run -d --name express-ci -p 3000:3000 --restart=always $DOCKER_IMAGE
-      "
+    - echo "==> Pulling last image"
+    - docker pull $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
+    - echo "==> Stopping old container"
+    - docker stop express-ci || true
+    - echo "==> Removing old container"
+    - docker rm express-ci || true
+    - echo "==> Starting container"
+    - docker run -d --name express-ci -p 3000:3000 --restart=always $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
   only:
     - main
