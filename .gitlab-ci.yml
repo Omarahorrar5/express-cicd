@@ -6,13 +6,12 @@ stages:
 
 variables:
   IMAGE_NAME: "express-ci"
-  DOCKER_DRIVER: overlay2
 
 test-app:
   stage: test
-  image: node:18-alpine
   tags:
     - local-vm
+  image: node:18-alpine
   script:
     - echo "==> Installing dependencies"
     - npm install
@@ -23,39 +22,18 @@ test-app:
 
 build-image:
   stage: build
-  image: docker:24.0.5
   tags:
     - local-vm
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--tls=false"]
   script:
     - echo "==> Building Docker image"
     - docker build -t $IMAGE_NAME:latest .
-  artifacts:
-    name: "built-image"
-    paths:
-      - docker-image.tar
-    when: always
-    expire_in: 1 hour
-  after_script:
-    - echo "==> Saving Docker image as artifact"
-    - docker save -o docker-image.tar $IMAGE_NAME:latest
   only:
     - main
 
 push-image:
   stage: push
-  image: docker:24.0.5
   tags:
     - local-vm
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--tls=false"]
-  before_script:
-    - docker info
-    - echo "==> Loading image from previous stage"
-    - docker load -i docker-image.tar
   script:
     - echo "==> Logging into Docker Hub"
     - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
@@ -63,19 +41,13 @@ push-image:
     - docker tag $IMAGE_NAME:latest $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
     - echo "==> Pushing image"
     - docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
-  dependencies:
-    - build-image
   only:
     - main
 
 deploy-to-local:
   stage: deploy
-  image: docker:24.0.5
   tags:
     - local-vm
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--tls=false"]
   script:
     - echo "==> Pulling latest image"
     - docker pull $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
