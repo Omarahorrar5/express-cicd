@@ -25,6 +25,8 @@ build-image:
   tags:
     - local-vm
   image: docker:24.0.5
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
   script:
     - echo "==> Building Docker image"
     - docker build -t $IMAGE_NAME:latest .
@@ -36,6 +38,8 @@ push-image:
   tags:
     - local-vm
   image: docker:24.0.5
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
   script:
     - echo "==> Logging into Docker Hub"
     - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
@@ -51,6 +55,8 @@ deploy-to-local:
   tags:
     - local-vm
   image: docker:24.0.5
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
   script:
     - echo "==> Deploying latest image locally"
     - docker pull $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
