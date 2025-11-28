@@ -7,8 +7,6 @@ pipeline {
     environment {
         IMAGE_NAME = 'express-ci'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        // DOCKERHUB_CREDENTIALS_USR will be username
-        // DOCKERHUB_CREDENTIALS_PSW will be password
     }
     
     // Tools: Specify which tools to use
@@ -100,7 +98,6 @@ pipeline {
     post {
         always {
             echo '==> Cleaning up'
-            // Clean workspace
             cleanWs()
         }
         success {
