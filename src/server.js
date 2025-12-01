@@ -9,10 +9,6 @@ app.get("/profile", (req, res) => {
   res.send({ name: "Omar", role: "Cloud & DevOps Student" });
 });
 
-app.get("/about", (req, res) => {
-  res.send({ app: "express-ci", version: "1.0.0" });
-});
-
 const PORT = 3000;
 
 if (process.env.NODE_ENV !== "test") {

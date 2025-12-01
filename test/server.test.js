@@ -18,13 +18,4 @@ describe("Express app endpoints", () => {
     });
   });
 
-  test("GET /about should return app info", async () => {
-    const res = await request(app).get("/about");
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
-      app: "express-ci",
-      version: "1.0.0"
-    });
-  });
-
 });
